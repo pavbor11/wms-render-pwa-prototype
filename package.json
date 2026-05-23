@@ -13,7 +13,6 @@
     "express": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "sqlite3": "^6.0.1",
     "vite": "latest",
     "vite-plugin-pwa": "latest"
   }
