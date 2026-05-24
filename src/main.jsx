@@ -2,6 +2,21 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './style.css';
 
+const modules = {
+  delivery: {
+    title: 'Dostawa',
+    defaultView: 'add'
+  },
+  issue: {
+    title: 'Wydanie',
+    defaultView: 'add'
+  },
+  history: {
+    title: 'Historia',
+    defaultView: 'dashboard'
+  }
+};
+
 function formatDate(value) {
   if (!value) return '-';
   return new Date(value).toLocaleString('pl-PL');
@@ -10,11 +25,13 @@ function formatDate(value) {
 function App() {
   const [code, setCode] = useState('');
   const [records, setRecords] = useState([]);
-  const [view, setView] = useState('add');
+  const [moduleName, setModuleName] = useState(null);
+  const [view, setView] = useState('home');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   const isValid = useMemo(() => /^\d{8}$/.test(code), [code]);
+  const selectedModule = moduleName ? modules[moduleName] : null;
 
   useEffect(() => {
     loadRecords();
@@ -34,6 +51,31 @@ function App() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function enterModule(nextModuleName) {
+    const nextModule = modules[nextModuleName];
+
+    if (!nextModule) return;
+
+    setModuleName(nextModuleName);
+    setMessage('');
+    setView(nextModule.defaultView);
+
+    if (nextModule.defaultView === 'dashboard') {
+      loadRecords();
+    }
+  }
+
+  function goHome() {
+    setModuleName(null);
+    setMessage('');
+    setView('home');
+  }
+
+  function showDashboard() {
+    setView('dashboard');
+    loadRecords();
   }
 
   function handleCodeChange(value) {
@@ -95,75 +137,113 @@ function App() {
   return (
     <div className="app">
       <header>
-        <h1>WMS Render PWA</h1>
-        <p>Telefon zapisuje dane na serwerze, komputer widzi je w dashboardzie.</p>
+        <h1>WMS MOD Test</h1>
       </header>
 
-      <nav>
-        <button className={view === 'add' ? 'active' : ''} onClick={() => setView('add')}>Dodaj</button>
-        <button className={view === 'dashboard' ? 'active' : ''} onClick={() => { setView('dashboard'); loadRecords(); }}>Dashboard</button>
-      </nav>
+      {view === 'home' && (
+        <main className="home">
+          <h2>Co dzisiaj robimy?</h2>
 
-      {message && <div className="message">{message}</div>}
-
-      {view === 'add' && (
-        <main className="card">
-          <h2>Dodaj kod</h2>
-          <form onSubmit={saveRecord}>
-            <label>
-              Kod 8 cyfr
-              <input
-                autoFocus
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength="8"
-                value={code}
-                onChange={e => handleCodeChange(e.target.value)}
-                placeholder="np. 12345678"
-              />
-            </label>
-
-            <div className={isValid ? 'status ok' : 'status'}>{code.length}/8 cyfr</div>
-
-            <button className="primary" type="submit" disabled={loading}>
-              {loading ? 'ZAPIS...' : 'ZAPISZ'}
+          <div className="module-grid">
+            <button className="module-button" type="button" onClick={() => enterModule('delivery')}>
+              <span>Dostawa</span>
             </button>
-          </form>
+            <button className="module-button" type="button" onClick={() => enterModule('issue')}>
+              <span>Wydanie</span>
+            </button>
+            <button className="module-button" type="button" onClick={() => enterModule('history')}>
+              <span>Historia</span>
+            </button>
+          </div>
         </main>
       )}
 
-      {view === 'dashboard' && (
-        <main className="card">
-          <div className="toolbar">
-            <h2>Dashboard</h2>
-            <button className="danger" onClick={clearRecords} disabled={loading}>Wyczyść</button>
+      {view !== 'home' && selectedModule && (
+        <section className="workspace">
+          <div className="workspace-header">
+            <button className="back-button" type="button" aria-label="Wróć" onClick={goHome}>
+              ←
+            </button>
+            <h2>{selectedModule.title}</h2>
           </div>
 
-          <div className="summary">
-            Liczba rekordów: <strong>{records.length}</strong>
-          </div>
+          <nav>
+            <button className={view === 'add' ? 'active' : ''} onClick={() => setView('add')}>
+              Dodaj
+            </button>
+            <button className={view === 'dashboard' ? 'active' : ''} onClick={showDashboard}>
+              Dashboard
+            </button>
+          </nav>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Kod</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.length === 0 && (
-                <tr><td colSpan="2" className="empty">{loading ? 'Ładowanie...' : 'Brak danych'}</td></tr>
-              )}
+          {message && <div className="message">{message}</div>}
 
-              {records.map(record => (
-                <tr key={record.id}>
-                  <td>{formatDate(record.createdAt)}</td>
-                  <td className="code">{record.code}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </main>
+          {view === 'add' && (
+            <main className="card">
+              <h2>Dodaj kod</h2>
+              <form onSubmit={saveRecord}>
+                <label>
+                  Kod 8 cyfr
+                  <input
+                    autoFocus
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength="8"
+                    value={code}
+                    onChange={e => handleCodeChange(e.target.value)}
+                    placeholder="np. 12345678"
+                  />
+                </label>
+
+                <div className={isValid ? 'status ok' : 'status'}>{code.length}/8 cyfr</div>
+
+                <button className="primary" type="submit" disabled={loading}>
+                  {loading ? 'ZAPIS...' : 'ZAPISZ'}
+                </button>
+              </form>
+            </main>
+          )}
+
+          {view === 'dashboard' && (
+            <main className="card">
+              <div className="toolbar">
+                <h2>Dashboard</h2>
+                <button className="danger" onClick={clearRecords} disabled={loading}>
+                  Wyczyść
+                </button>
+              </div>
+
+              <div className="summary">
+                Liczba rekordów: <strong>{records.length}</strong>
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Kod</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {records.length === 0 && (
+                    <tr>
+                      <td colSpan="2" className="empty">
+                        {loading ? 'Ładowanie...' : 'Brak danych'}
+                      </td>
+                    </tr>
+                  )}
+
+                  {records.map(record => (
+                    <tr key={record.id}>
+                      <td>{formatDate(record.createdAt)}</td>
+                      <td className="code">{record.code}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </main>
+          )}
+        </section>
       )}
 
       <footer>
