@@ -13,11 +13,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'WMS Render PWA',
+        name: 'WMS MOD Test',
         short_name: 'WMS',
-        description: 'Test PWA zapisujący dane na backendzie Render',
-        theme_color: '#17212b',
-        background_color: '#f4f6f8',
+        description: 'WMS MOD Test',
+        theme_color: '#15803d',
+        background_color: '#f3f6f4',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
